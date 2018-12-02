@@ -26,6 +26,7 @@ namespace ShadowLite
 
 		private int shadowTexPid;
 		private int shadowMatrixPid;
+		private int shadowBiasPid;
 
 		private void OnEnable()
 		{
@@ -43,7 +44,7 @@ namespace ShadowLite
 				shadowLight.shadows = LightShadows.None;
 			}
 
-			shadowShader = Shader.Find("Hidden/ShadowLite/SLShadowProjector");
+			shadowShader = Shader.Find("Hidden/ShadowLite/SLShadowCaster");
 			shadowTexture = new RenderTexture(512, 512, 16, RenderTextureFormat.RHalf);
 
 			if (shadowCamera == null)
@@ -74,6 +75,8 @@ namespace ShadowLite
 
 			shadowTexPid = Shader.PropertyToID("_SLShadowTex");
 			shadowMatrixPid = Shader.PropertyToID("_SLWorldToShadow");
+			shadowBiasPid = Shader.PropertyToID("_SLShadowBias");
+
 		}
 
 		private void OnPreRender()
@@ -86,6 +89,7 @@ namespace ShadowLite
 			var world2shadow = GL.GetGPUProjectionMatrix(shadowCamera.projectionMatrix, false) * shadowCamera.worldToCameraMatrix;
 			Shader.SetGlobalMatrix(shadowMatrixPid, world2shadow);
 			Shader.SetGlobalTexture(shadowTexPid, shadowTexture);
+			Shader.SetGlobalVector(shadowBiasPid, new Vector4(shadowBias, 1, shadowNormalBias, 0));
 		}
 	}
 }

@@ -20,21 +20,21 @@
 
 			struct v2f
             {
-                float2 uv : TEXCOORD0;
-                float4 posWS : TEXCOORD1;
-                fixed4 diff : COLOR0; // diffuse lighting color
-                float4 vertex : SV_POSITION;
+                float4 pos : SV_POSITION;
+                fixed3 diff : COLOR0;
+                fixed3 ambient : COLOR1;
+            	SL_SHADOW_COORDS(3);
             };
 
             v2f vert (appdata_base v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = v.texcoord;
-                o.posWS = mul(unity_ObjectToWorld, v.vertex);
+                o.pos = UnityObjectToClipPos(v.vertex);
                 half3 worldNormal = UnityObjectToWorldNormal(v.normal);
                 half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-                o.diff = nl * _LightColor0;
+                o.diff = nl * _LightColor0.rgb;
+                o.ambient = ShadeSH9(half4(worldNormal,1));
+                SL_TRANSFER_SHADOW(o);
                 return o;
             }
 
@@ -43,7 +43,11 @@
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = _Color;
-                col *= i.diff * SLComputeForwardShadows(i.posWS);
+
+                fixed shadow = SL_SHADOW_ATTENUATION(i);
+                fixed3 lighting = saturate(i.diff * shadow + i.ambient + 0.3);
+                col.rgb *= lighting;
+
                 return col;
             }
             ENDCG
